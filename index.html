@@ -132,12 +132,86 @@ function completeQuest() {
         "Quest completed! EXP received.";
 }
 
-function sendCommand() {
-    let command = document.getElementById("command").value;
-    document.getElementById("response").innerText =
-        "Command received: " + command;
+async function sendCommand() {
+const input = document.getElementById("command");
+const responseBox = document.getElementById("response");
+const command = input.value.trim();
+
+if (!command) return;
+
+responseBox.innerText = "JARVIS is thinking, Sir...";
+
+try {
+    const response = await fetch(
+        "https://jarvis-god-system.onrender.com/chat",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: command
+            })
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "AI connection failed");
+    }
+
+    responseBox.innerText = data.reply;
+    speakJarvis(data.reply);
+
+    input.value = "";
+
+} catch (error) {
+    responseBox.innerText =
+        "Sorry Sir, AI connection failed: " + error.message;
 }
 
+}
+async function sendCommand() {
+const input = document.getElementById("command");
+const responseBox = document.getElementById("response");
+const command = input.value.trim();
+
+if (!command) return;
+
+responseBox.innerText = "JARVIS is thinking, Sir...";
+
+try {
+    const response = await fetch(
+        "https://jarvis-god-system.onrender.com/chat",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: command
+            })
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "AI connection failed");
+    }
+
+    responseBox.innerText = data.reply;
+    speakJarvis(data.reply);
+
+    input.value = "";
+
+} catch (error) {
+    responseBox.innerText =
+        "Sorry Sir, AI connection failed: " + error.message;
+}
+
+}
 function activate() {
     document.getElementById("response").innerText =
         "JARVIS activated. Voice system coming soon.";
