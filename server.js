@@ -1,4 +1,4 @@
-```javascript
+
 import express from "express";
 import Groq from "groq-sdk";
 
@@ -9,9 +9,9 @@ app.use(express.json());
 app.use((req, res, next) => {
   res.setHeader(
     "Access-Control-Allow-Origin",
-   "https://blastermaster12.github.io"
+    "https://blastermaster12.github.io"
   );
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
@@ -44,8 +44,7 @@ app.post("/chat", async (req, res) => {
       messages: [
         {
           role: "system",
-          content:
-            "You are JARVIS, a calm and intelligent AI assistant inspired by Tony Stark's assistant. Reply naturally in Hindi, Hinglish, or English according to the user's language."
+          content: "You are JARVIS, a calm and intelligent AI assistant. Reply naturally in Hindi, Hinglish, or English according to the user's language."
         },
         {
           role: "user",
