@@ -1,4 +1,4 @@
-{
+
   "name": "jarvis-god-system",
   "version": "1.0.0",
   "type": "module",
@@ -8,5 +8,4 @@
   "dependencies": {
     "express": "^5.1.0",
     "groq-sdk": "^0.30.0"
-  }
-}
+  
