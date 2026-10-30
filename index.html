@@ -1,1 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS — GOD SYSTEM</title>
 
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #080510;
+    color: white;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    color: #bd70ff;
+    letter-spacing: 3px;
+}
+
+.panel {
+    background: #160c25;
+    border: 1px solid #8238c9;
+    border-radius: 15px;
+    padding: 18px;
+    margin: 18px 0;
+    box-shadow: 0 0 15px #6720a544;
+}
+
+h2 {
+    color: #c68aff;
+}
+
+.core {
+    width: 145px;
+    height: 145px;
+    border: 3px solid #bd70ff;
+    border-radius: 50%;
+    margin: 30px auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    box-shadow: 0 0 30px #a43cff;
+    cursor: pointer;
+}
+
+button {
+    background: #822bd1;
+    border: none;
+    color: white;
+    padding: 13px 20px;
+    border-radius: 10px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+input {
+    width: 100%;
+    padding: 13px;
+    border-radius: 8px;
+    border: 1px solid #8238c9;
+    background: #090511;
+    color: white;
+}
+
+.stat {
+    display: flex;
+    justify-content: space-between;
+    margin: 12px 0;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>JARVIS — GOD SYSTEM</h1>
+<p>PERSONAL AI ASSISTANT</p>
+</header>
+
+<div class="core" onclick="activate()">
+JARVIS
+</div>
+
+<div class="panel">
+<h2>PLAYER STATUS</h2>
+<div class="stat"><span>PLAYER</span><b>DEBASISH</b></div>
+<div class="stat"><span>LEVEL</span><b id="level">1</b></div>
+<div class="stat"><span>EXP</span><b id="exp">0 / 100</b></div>
+<div class="stat"><span>RANK</span><b id="rank">F</b></div>
+</div>
+
+<div class="panel">
+<h2>DAILY QUEST</h2>
+<p>Complete your daily missions.</p>
+<button onclick="completeQuest()">Complete Quest</button>
+</div>
+
+<div class="panel">
+<h2>AI ASSISTANT</h2>
+<p id="response">System online. Awaiting command.</p>
+<input id="command" placeholder="Type your command...">
+<button onclick="sendCommand()">Send</button>
+<button onclick="activate()">Voice</button>
+</div>
+
+<script>
+let level = 1;
+let exp = 0;
+
+function completeQuest() {
+    exp += 25;
+
+    if (exp >= 100) {
+        exp -= 100;
+        level++;
+        document.getElementById("rank").innerText =
+            level >= 10 ? "E" : "F";
+    }
+
+    document.getElementById("level").innerText = level;
+    document.getElementById("exp").innerText = exp + " / 100";
+
+    document.getElementById("response").innerText =
+        "Quest completed! EXP received.";
+}
+
+function sendCommand() {
+    let command = document.getElementById("command").value;
+    document.getElementById("response").innerText =
+        "Command received: " + command;
+}
+
+function activate() {
+    document.getElementById("response").innerText =
+        "JARVIS activated. Voice system coming soon.";
+}
+
+</script>
+
+</body>
+</html>
