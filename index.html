@@ -142,7 +142,40 @@ function activate() {
     document.getElementById("response").innerText =
         "JARVIS activated. Voice system coming soon.";
 }
+function speakJarvis(message) {
+    if (!('speechSynthesis' in window)) {
+        alert("Voice not supported");
+        return;
+    }
 
+    window.speechSynthesis.cancel();
+
+    const speech = new SpeechSynthesisUtterance(message);
+
+    speech.lang = "en-IN";
+    speech.rate = 0.90;
+    speech.pitch = 0.75;
+    speech.volume = 1;
+
+    const voices = window.speechSynthesis.getVoices();
+
+    const maleVoice = voices.find(v =>
+        /male|david|mark|daniel|james/i.test(v.name)
+    );
+
+    if (maleVoice) {
+        speech.voice = maleVoice;
+    }
+
+    window.speechSynthesis.speak(speech);
+}function activate() {
+    const message =
+    "Hello Debasish. JARVIS system is online. How can I assist you, Sir?";
+
+    document.getElementById("response").innerText = message;
+
+    speakJarvis(message);
+}
 </script>
 
 </body>
