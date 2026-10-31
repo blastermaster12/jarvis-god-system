@@ -379,20 +379,23 @@ function speakJarvis(message) {
 
 // JARVIS ACTIVATION
 
-function activate() {
+function startListening() {
+    if (!recognition) {
+        document.getElementById("response").innerText =
+            "Voice recognition is not supported in this browser. Please try Chrome.";
+        return;
+    }
 
-    const message =
-        "Hello Debasish. JARVIS system is online. How can I assist you, Sir?";
+    if (isListening) {
+        return;
+    }
 
-    document.getElementById("response").innerText = message;
+    window.speechSynthesis?.cancel();
 
-    document.getElementById("status").innerText =
-        "JARVIS ONLINE";
-
-    speakJarvis(message);
+    try {
+        recognition.start();
+    } catch (error) {
+        document.getElementById("status").innerText =
+            "MICROPHONE START ERROR";
+    }
 }
-
-</script>
-
-</body>
-</html>
