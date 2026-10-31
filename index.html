@@ -307,12 +307,9 @@ if (SpeechRecognition) {
 
 
 function startListening() {
-
     if (!recognition) {
-
         document.getElementById("response").innerText =
             "Voice recognition is not supported in this browser. Please try Chrome.";
-
         return;
     }
 
@@ -323,13 +320,12 @@ function startListening() {
     window.speechSynthesis?.cancel();
 
     try {
-
         recognition.start();
-
     } catch (error) {
-
         document.getElementById("status").innerText =
             "MICROPHONE START ERROR";
+    }
+}
     }
 }
 
