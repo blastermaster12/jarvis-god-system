@@ -270,28 +270,54 @@ if (SpeechRecognition) {
 
 // START LISTENING
 
-function startListening() {
+
+async function startListening() {
+
+    const status = document.getElementById("status");
+    const responseBox = document.getElementById("response");
+
+    status.innerText = "CHECKING MICROPHONE...";
+    responseBox.innerText = "Microphone permission checking, Sir...";
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        status.innerText = "MICROPHONE NOT AVAILABLE";
+        responseBox.innerText = "Please open JARVIS using Chrome HTTPS.";
+        return;
+    }
 
     if (!recognition) {
-
-        document.getElementById("response").innerText =
-            "Voice recognition is not supported. Please use Chrome.";
-
+        status.innerText = "VOICE RECOGNITION NOT SUPPORTED";
+        responseBox.innerText = "Speech Recognition is not available in this browser.";
         return;
     }
 
     if (isListening) return;
 
-    window.speechSynthesis?.cancel();
-
     try {
+        // Request microphone permission
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true
+        });
+
+        // Release microphone before speech recognition starts
+        stream.getTracks().forEach(track => track.stop());
+
+        window.speechSynthesis?.cancel();
+
+        status.innerText = "STARTING MICROPHONE...";
+        responseBox.innerText = "Speak now, Sir...";
+
         recognition.start();
+
     } catch (error) {
 
-        document.getElementById("status").innerText =
-            "MICROPHONE ERROR: " + error.message;
+        status.innerText = "MICROPHONE ERROR: " + error.name;
+
+        responseBox.innerText =
+            "Microphone problem: " + error.message;
     }
 }
+    
 
 
 // STOP LISTENING
