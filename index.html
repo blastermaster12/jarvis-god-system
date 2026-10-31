@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -49,6 +50,12 @@ h2 {
     font-size: 20px;
     box-shadow: 0 0 30px #a43cff;
     cursor: pointer;
+    animation: glow 2s infinite alternate;
+}
+
+@keyframes glow {
+    from { box-shadow: 0 0 15px #a43cff; }
+    to { box-shadow: 0 0 40px #bd70ff; }
 }
 
 button {
@@ -61,6 +68,10 @@ button {
     cursor: pointer;
 }
 
+button:active {
+    background: #bd70ff;
+}
+
 input {
     width: 100%;
     padding: 13px;
@@ -68,6 +79,7 @@ input {
     border: 1px solid #8238c9;
     background: #090511;
     color: white;
+    margin-bottom: 8px;
 }
 
 .stat {
@@ -75,6 +87,12 @@ input {
     justify-content: space-between;
     margin: 12px 0;
 }
+
+#status {
+    color: #bd70ff;
+    font-size: 13px;
+}
+
 </style>
 </head>
 
@@ -91,10 +109,26 @@ JARVIS
 
 <div class="panel">
 <h2>PLAYER STATUS</h2>
-<div class="stat"><span>PLAYER</span><b>DEBASISH</b></div>
-<div class="stat"><span>LEVEL</span><b id="level">1</b></div>
-<div class="stat"><span>EXP</span><b id="exp">0 / 100</b></div>
-<div class="stat"><span>RANK</span><b id="rank">F</b></div>
+
+<div class="stat">
+<span>PLAYER</span>
+<b>DEBASISH</b>
+</div>
+
+<div class="stat">
+<span>LEVEL</span>
+<b id="level">1</b>
+</div>
+
+<div class="stat">
+<span>EXP</span>
+<b id="exp">0 / 100</b>
+</div>
+
+<div class="stat">
+<span>RANK</span>
+<b id="rank">F</b>
+</div>
 </div>
 
 <div class="panel">
@@ -105,120 +139,218 @@ JARVIS
 
 <div class="panel">
 <h2>AI ASSISTANT</h2>
+
 <p id="response">System online. Awaiting command.</p>
-<input id="command" placeholder="Type your command...">
+
+<p id="status">SYSTEM READY</p>
+
+<input
+    id="command"
+    placeholder="Type your command..."
+    onkeydown="if(event.key === 'Enter') sendCommand()"
+>
+
 <button onclick="sendCommand()">Send</button>
-<button onclick="activate()">Voice</button>
+
+<button onclick="startListening()">🎤 Speak</button>
+
+<button onclick="stopListening()">Stop Mic</button>
+
 </div>
 
 <script>
+
 let level = 1;
 let exp = 0;
 
 function completeQuest() {
+
     exp += 25;
 
     if (exp >= 100) {
         exp -= 100;
         level++;
+
         document.getElementById("rank").innerText =
             level >= 10 ? "E" : "F";
     }
 
     document.getElementById("level").innerText = level;
-    document.getElementById("exp").innerText = exp + " / 100";
+
+    document.getElementById("exp").innerText =
+        exp + " / 100";
 
     document.getElementById("response").innerText =
         "Quest completed! EXP received.";
+
+    speakJarvis("Quest completed, Sir. Experience points received.");
 }
+
+
+// AI CHAT CONNECTION
 
 async function sendCommand() {
-const input = document.getElementById("command");
-const responseBox = document.getElementById("response");
-const command = input.value.trim();
 
-if (!command) return;
+    const input = document.getElementById("command");
+    const responseBox = document.getElementById("response");
+    const status = document.getElementById("status");
 
-responseBox.innerText = "JARVIS is thinking, Sir...";
+    const command = input.value.trim();
 
-try {
-    const response = await fetch(
-        "https://jarvis-god-system.onrender.com/chat",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: command
-            })
+    if (!command) return;
+
+    window.speechSynthesis?.cancel();
+
+    status.innerText = "JARVIS IS THINKING...";
+    responseBox.innerText = "Processing your command, Sir...";
+
+    try {
+
+        const response = await fetch(
+            "https://jarvis-god-system.onrender.com/chat",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message: command
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "AI connection failed");
         }
-    );
 
-    const data = await response.json();
+        responseBox.innerText = data.reply;
 
-    if (!response.ok) {
-        throw new Error(data.error || "AI connection failed");
+        status.innerText = "JARVIS ONLINE";
+
+        input.value = "";
+
+        speakJarvis(data.reply);
+
+    } catch (error) {
+
+        responseBox.innerText =
+            "Sorry Sir, AI connection failed: " + error.message;
+
+        status.innerText = "CONNECTION ERROR";
+    }
+}
+
+
+// VOICE INPUT SYSTEM
+
+const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+let recognition = null;
+let isListening = false;
+
+if (SpeechRecognition) {
+
+    recognition = new SpeechRecognition();
+
+    recognition.lang = "hi-IN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = function() {
+
+        isListening = true;
+
+        document.getElementById("status").innerText =
+            "🎤 JARVIS IS LISTENING...";
+
+        document.getElementById("response").innerText =
+            "Speak now, Sir...";
+    };
+
+    recognition.onresult = function(event) {
+
+        const transcript =
+            event.results[0][0].transcript;
+
+        document.getElementById("command").value =
+            transcript;
+
+        document.getElementById("status").innerText =
+            "VOICE RECEIVED";
+
+        sendCommand();
+    };
+
+    recognition.onerror = function(event) {
+
+        isListening = false;
+
+        document.getElementById("status").innerText =
+            "VOICE ERROR: " + event.error;
+
+        if (event.error === "not-allowed") {
+            document.getElementById("response").innerText =
+                "Microphone permission denied. Please allow microphone access.";
+        }
+    };
+
+    recognition.onend = function() {
+
+        isListening = false;
+    };
+
+}
+
+
+function startListening() {
+
+    if (!recognition) {
+
+        document.getElementById("response").innerText =
+            "Voice recognition is not supported in this browser. Please try Chrome.";
+
+        return;
     }
 
-    responseBox.innerText = data.reply;
-    speakJarvis(data.reply);
-
-    input.value = "";
-
-} catch (error) {
-    responseBox.innerText =
-        "Sorry Sir, AI connection failed: " + error.message;
-}
-
-}
-async function sendCommand() {
-const input = document.getElementById("command");
-const responseBox = document.getElementById("response");
-const command = input.value.trim();
-
-if (!command) return;
-
-responseBox.innerText = "JARVIS is thinking, Sir...";
-
-try {
-    const response = await fetch(
-        "https://jarvis-god-system.onrender.com/chat",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: command
-            })
-        }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.error || "AI connection failed");
+    if (isListening) {
+        return;
     }
 
-    responseBox.innerText = data.reply;
-    speakJarvis(data.reply);
+    window.speechSynthesis?.cancel();
 
-    input.value = "";
+    try {
 
-} catch (error) {
-    responseBox.innerText =
-        "Sorry Sir, AI connection failed: " + error.message;
+        recognition.start();
+
+    } catch (error) {
+
+        document.getElementById("status").innerText =
+            "MICROPHONE START ERROR";
+    }
 }
 
+
+function stopListening() {
+
+    if (recognition && isListening) {
+
+        recognition.stop();
+
+        document.getElementById("status").innerText =
+            "MICROPHONE STOPPED";
+    }
 }
-function activate() {
-    document.getElementById("response").innerText =
-        "JARVIS activated. Voice system coming soon.";
-}
+
+
+// VOICE OUTPUT SYSTEM
+
 function speakJarvis(message) {
-    if (!('speechSynthesis' in window)) {
-        alert("Voice not supported");
+
+    if (!("speechSynthesis" in window)) {
         return;
     }
 
@@ -242,14 +374,24 @@ function speakJarvis(message) {
     }
 
     window.speechSynthesis.speak(speech);
-}function activate() {
+}
+
+
+// JARVIS ACTIVATION
+
+function activate() {
+
     const message =
-    "Hello Debasish. JARVIS system is online. How can I assist you, Sir?";
+        "Hello Debasish. JARVIS system is online. How can I assist you, Sir?";
 
     document.getElementById("response").innerText = message;
 
+    document.getElementById("status").innerText =
+        "JARVIS ONLINE";
+
     speakJarvis(message);
 }
+
 </script>
 
 </body>
