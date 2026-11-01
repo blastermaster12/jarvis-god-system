@@ -458,7 +458,12 @@ async function sendCommand() {
         speakJarvis("Sorry Sir, I am having trouble connecting to my AI brain.");
     }
 }
+let JARVIS_SESSION_ID = localStorage.getItem("jarvis_session_id");
 
+if (!JARVIS_SESSION_ID) {
+    JARVIS_SESSION_ID = crypto.randomUUID();
+    localStorage.setItem("jarvis_session_id", JARVIS_SESSION_ID);
+    }
 
 // JARVIS VOICE OUTPUT
 
