@@ -22,10 +22,19 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SECRET_KEY
-);
+const rawSupabaseUrl = (process.env.SUPABASE_URL || "").trim();
+
+const supabaseUrl = rawSupabaseUrl
+  .replace(/\/+$/, "")
+  .replace(/\/rest\/v1$/i, "");
+
+const supabaseKey = (process.env.SUPABASE_SECRET_KEY || "").trim();
+
+if (!supabaseUrl.startsWith("https://") || !supabaseKey) {
+  throw new Error("Supabase URL or Secret Key is missing or invalid.");
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const SYSTEM_PROMPT = `
 You are JARVIS — GOD SYSTEM, a caring and intelligent AI companion.
