@@ -427,7 +427,10 @@ async function sendCommand() {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ message: command })
+                body: JSON.stringify({
+    message: command,
+    sessionId: JARVIS_SESSION_ID
+})
             }
         );
 
