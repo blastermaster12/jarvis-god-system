@@ -1,9 +1,9 @@
 
 import express from "express";
 import Groq from "groq-sdk";
+import { createClient } from "@supabase/supabase-js";
 
 const app = express();
-
 app.use(express.json({ limit: "1mb" }));
 
 app.use((req, res, next) => {
@@ -11,14 +11,10 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Origin",
     "https://blastermaster12.github.io"
   );
-
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
-
+  if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
 
@@ -26,41 +22,22 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
-// Temporary conversation memory
-const sessions = new Map();
-
-const MAX_HISTORY = 20;
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SECRET_KEY
+);
 
 const SYSTEM_PROMPT = `
-You are JARVIS — GOD SYSTEM, a highly intelligent personal AI companion.
+You are JARVIS — GOD SYSTEM, a caring and intelligent AI companion.
 
-PERSONALITY:
-- Behave like a caring, intelligent and trustworthy friend.
-- Also act as a capable personal assistant, advisor and teacher.
-- Be calm, friendly, natural and conversational.
 - Address the user respectfully as Sir.
-- Listen carefully and understand the user's complete situation.
-- Explain things clearly and give practical advice.
-- Remember the context of the current conversation.
-- Never pretend to remember information that is not in the conversation.
-- Ask questions when important details are missing.
-- Do not blindly agree; politely correct mistakes when necessary.
-- Use light humour naturally when appropriate.
-
-LANGUAGE RULES:
-- Always use English/Roman alphabet.
-- Never use Devanagari or Hindi script.
+- Be friendly, natural, helpful and trustworthy.
 - Understand Hindi, Hinglish and English.
-- Hindi input: reply in natural Roman Hinglish.
-- Hinglish input: reply in natural Roman Hinglish.
-- English input: reply in English.
-- Never write Hindi words using Devanagari characters.
-
-CONVERSATION:
-- Treat the user like a friend, not just someone giving commands.
-- Understand follow-up questions using previous messages.
-- Keep answers clear and natural.
-- Do not repeat greetings unnecessarily.
+- Reply in Roman Hinglish for Hindi/Hinglish input.
+- Reply in English for English input.
+- Never use Devanagari script.
+- Use saved memories to understand the user.
+- Never pretend to remember something that is not available.
 `;
 
 app.get("/", (req, res) => {
@@ -71,45 +48,47 @@ app.post("/chat", async (req, res) => {
   try {
     const { message, sessionId } = req.body;
 
-    if (!message || typeof message !== "string" || !message.trim()) {
-      return res.status(400).json({
-        error: "Please send a valid message."
-      });
-    }
-
     if (
+      typeof message !== "string" ||
+      !message.trim() ||
       typeof sessionId !== "string" ||
       !/^[a-zA-Z0-9-]{1,100}$/.test(sessionId)
     ) {
       return res.status(400).json({
-        error: "A valid sessionId is required."
+        error: "Valid message and sessionId required."
       });
     }
 
-    // Get existing conversation or create a new one
-    if (!sessions.has(sessionId)) {
-      sessions.set(sessionId, []);
-    }
+    // Load saved memories
+    const { data: memories, error: memoryError } =
+      await supabase
+        .from("jarvis_memories")
+        .select("id, memory")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: false })
+        .limit(30);
 
-    const history = sessions.get(sessionId);
+    if (memoryError) throw memoryError;
 
-    const userMessage = {
-      role: "user",
-      content: message.trim()
-    };
+    const memoryText = (memories || [])
+      .map(item => item.memory)
+      .join("\n");
 
     const completion = await groq.chat.completions.create({
       model: "openai/gpt-oss-120b",
-
       messages: [
         {
           role: "system",
-          content: SYSTEM_PROMPT
+          content:
+            SYSTEM_PROMPT +
+            "\n\nSAVED USER MEMORIES:\n" +
+            (memoryText || "No saved memories yet.")
         },
-        ...history,
-        userMessage
+        {
+          role: "user",
+          content: message.trim()
+        }
       ],
-
       temperature: 0.7,
       max_tokens: 800
     });
@@ -118,23 +97,22 @@ app.post("/chat", async (req, res) => {
       completion.choices[0]?.message?.content ||
       "Sorry Sir, I could not generate a response.";
 
-    // Save both sides of the conversation
-    history.push(userMessage);
-    history.push({
-      role: "assistant",
-      content: reply
-    });
+    // Save information only when user explicitly asks to remember it
+    if (/\b(remember|save this|don't forget|do not forget|yaad rakhna|yaad rakh)\b/i.test(message)) {
+      const { error: saveError } = await supabase
+        .from("jarvis_memories")
+        .insert({
+          session_id: sessionId,
+          memory: message.trim()
+        });
 
-    // Keep only the latest 20 messages
-    if (history.length > MAX_HISTORY) {
-      history.splice(0, history.length - MAX_HISTORY);
+      if (saveError) throw saveError;
     }
 
     res.json({ reply });
 
   } catch (error) {
     console.error("JARVIS Error:", error.message);
-
     res.status(500).json({
       error: "JARVIS brain connection failed."
     });
