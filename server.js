@@ -24,7 +24,6 @@ const groq = new Groq({
 
 const rawSupabaseUrl = (process.env.SUPABASE_URL || "").trim();
 
-console.log("Supabase URL:", supabaseUrl);
 const supabaseUrl = rawSupabaseUrl
   .replace(/\/+$/, "")
   .replace(/\/rest\/v1$/i, "");
